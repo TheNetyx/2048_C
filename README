@@ -1,0 +1,9 @@
+2048, written in C because why not
+
+This is probably some very not optimal code, but hey, it works (??). It looks
+pretty bad since it's just black and white and that makes it kinda difficult
+to tell a cell with 2 from one with 4 like you can with the real 2048. Might
+update this later if I feel like it :p
+
+Dependencies:
+- ncurses
