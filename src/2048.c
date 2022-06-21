@@ -59,6 +59,7 @@ int main(void)
                 for(int i = 0;i < 16;i++) {
                     if(grid[i] == 2048) {
                         add_random(grid);
+                        game_over(grid, true);
                         goto cleanup;
                     }
                 }
@@ -190,11 +191,11 @@ void draw_board(Grid *grid)
            "+---------+---------+\r\n"
            "|  SCORE  |HIGHSCORE|\r\n"
            "+---------+---------+\r\n"
-           "|    %4d |    %4d |\r\n"
+           "|  %6d |  %6d |\r\n"
            "+---------+---------+\r\n"
            :
            "+---------+--------+\r\n"
-           "|  SCORE  |   %4d |\r\n"
+           "|  SCORE  | %6d |\r\n"
            "+---------+--------+\r\n",
            score, highscore
           );
