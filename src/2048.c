@@ -1,8 +1,5 @@
 #include "2048.h"
 
-
-#include <errno.h>
-
 int score;
 int highscore = 0;
 bool hs_enabled = true;
@@ -23,9 +20,12 @@ int main(void)
         sprintf(hs_file_name, "%s/.2048_highscores", home_env);
         hs_file = fopen(hs_file_name, "ab+");
         if(!hs_file) {
+            /* free hs_file_name now because it is not freed at the end if  */
+            /* hs_enabled is false because the file cannot be opened        */
             free(hs_file_name);
             hs_enabled = false;
         } else {
+            /* don't care if this fails, since highscore defaults to 0 */
             fread(&highscore, sizeof(int), 1, hs_file);
             fseek(hs_file, 0, SEEK_SET);
         }
@@ -97,7 +97,9 @@ int add_random(Grid *grid)
             num_filled_cells++;
     }
     if(num_filled_cells >= 16) {
-        system("touch fullcell");
+        /* this should never happen, as gameover is checked after the 16th */
+        /* block is spawned, therefore making it impossible to attempt to  */
+        /* spawn a block when the board is already full                    */
         abort();
     }
 
@@ -113,7 +115,7 @@ int add_random(Grid *grid)
     grid[index] = is_4 ? 4 : 2;
 
     if(num_filled_cells == 15) {
-        /* if there are 15 cells filled, only 1 is open for spawning. */
+        /* if there are 15 cells filled, only 1 is open for spawning.       */
         /* game over if there are no valid moves after spawning new number. */
         return !has_valid_moves(grid);
     }
@@ -123,34 +125,18 @@ int add_random(Grid *grid)
 
 bool has_valid_moves(Grid *grid)
 {
-    /* up */
     for(int j = 0;j < 4;j++) {
         for(int i = 1;i < 4;i++) {
-            if(GRID(i, j) == GRID(i - 1, j)) {
+               /* up */                        /* left */
+            if(GRID(i, j) == GRID(i - 1, j) || GRID(j, i) == GRID(j, i - 1)) {
                 return true;
             }
         }
     }
-    /* down */
     for(int j = 0;j < 4;j++) {
         for(int i = 2;i >= 0;i--) {
-            if(GRID(i, j) == GRID(i + 1, j)) {
-                return true;
-            }
-        }
-    }
-    /* left */
-    for(int j = 0;j < 4;j++) {
-        for(int i = 1;i < 4;i++) {
-            if(GRID(j, i) == GRID(j, i - 1)) {
-                return true;
-            }
-        }
-    }
-    /* right */
-    for(int j = 0;j < 4;j++) {
-        for(int i = 2;i >= 0;i--) {
-            if(GRID(j, i) == GRID(j, i + 1)) {
+               /* down */                      /* right */
+            if(GRID(i, j) == GRID(i + 1, j) || GRID(j, i) == GRID(j, i + 1)) {
                 return true;
             }
         }
@@ -177,12 +163,13 @@ void draw_board(Grid *grid)
                     "|      |      |      |      |\r\n"
                     "|      |      |      |      |\r\n"
                     "+------+------+------+------+\r\n";
-    char tempbuf[5];
 
     for(int i = 0;i < 16;i++) {
         if(grid[i]) {
-            sprintf(tempbuf, "%4d", grid[i]);
-            memcpy(buffer + LOCATION_MODIFIER[i], tempbuf, 4);
+            sprintf(buffer + LOCATION_MODIFIER[i], "%4d", grid[i]);
+            /* replace null byte from sprintf with space so the grid can  */
+            /* be printed properly                                        */
+            *(buffer + LOCATION_MODIFIER[i] + 4) = ' ';
         }
     }
 
@@ -213,37 +200,55 @@ bool make_move(Grid *grid, const int dir)
     switch(dir) {
         case DIR_UP:
             /* move everything in the direction specified */
+
+            /* start moving from the uppermost column because so all cells */
+            /* move out of the way of other cells                          */
             for(int j = 0;j < 4;j++) {
                 for(int i = 1;i < 4;i++) {
                     if(newgrid[i][j] && !newgrid[i - 1][j]) {
                         newgrid[i - 1][j] = newgrid[i][j];
                         newgrid[i][j] = 0;
-                        /* if any grid is moved, move this column again. */
-                        /* these variables are set so that when they are */
-                        /* incremented by the loop they start over again. */
+                        /* if any grid is moved, move its column again.    */
+                        /* i is set to 0 so that when it is incremented    */
+                        /* by the loop it goes back to its initial value   */
                         i = 0;
+
+                        /* if the cells were moved, this is a valid move   */
                         was_valid = true;
                     }
                 }
             }
+
+
             /* merge */
+
+            /* start merging from the uppermost column for the same reason */
             for(int j = 0;j < 4;j++) {
                 for(int i = 1;i < 4;i++) {
                     if(newgrid[i][j] == newgrid[i - 1][j] && newgrid[i][j]) {
                         newgrid[i - 1][j] *= 2;
                         newgrid[i][j] = 0;
                         score += newgrid[i - 1][j];
+
+                        /* if there was merges, this is a valid move */
                         was_valid = true;
                     }
                 }
             }
-            /* move everything again */
+
+
+            /* move everything again after merge, as merging creates holes */
+
+            /* probably can merge this loop into the one above later       */
             for(int j = 0;j < 4;j++) {
                 for(int i = 1;i < 4;i++) {
                     if(newgrid[i][j] && !newgrid[i - 1][j]) {
                         newgrid[i - 1][j] = newgrid[i][j];
                         newgrid[i][j] = 0;
                         i = 0;
+
+                        /* was_valid not set because it would've been set  */
+                        /* in the previous loop anyway                     */
                     }
                 }
             }
@@ -359,6 +364,7 @@ bool make_move(Grid *grid, const int dir)
     }
     memcpy(grid, newgrid, sizeof(newgrid));
 
+    /* return value is negated because we return 0 for success */
     return !was_valid;
 }
 
