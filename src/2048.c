@@ -1,12 +1,35 @@
 #include "2048.h"
 
+
+#include <errno.h>
+
 int score;
+int highscore = 0;
+bool hs_enabled = true;
 
 int main(void)
 {
     Grid grid[16] = {}; // 4 x 4 grid, access cells using GRID(y, x)
     int key_pressed;
+    FILE *hs_file;      // hs = highscore
+    char *hs_file_name, *home_env;
+
     score = 0;
+
+    home_env = getenv("HOME");
+    if ((!home_env) || !(hs_file_name = malloc(strlen(home_env) + 17))) {
+        hs_enabled = false;
+    } else {
+        sprintf(hs_file_name, "%s/.2048_highscores", home_env);
+        hs_file = fopen(hs_file_name, "ab+");
+        if(!hs_file) {
+            free(hs_file_name);
+            hs_enabled = false;
+        } else {
+            fread(&highscore, sizeof(int), 1, hs_file);
+            fseek(hs_file, 0, SEEK_SET);
+        }
+    }
 
     srand(time(NULL));
     /* turn off echoing of inputs */
@@ -36,17 +59,29 @@ int main(void)
                 for(int i = 0;i < 16;i++) {
                     if(grid[i] == 2048) {
                         add_random(grid);
-                        game_over(grid, true);
+                        goto cleanup;
                     }
                 }
                 if(add_random(grid)) {
                     game_over(grid, false);
+                    goto cleanup;
+                    //break;
                 }
                 draw_board(grid);
             }
         }
     }
 
+    cleanup:
+    if(hs_enabled) {
+        if(score > highscore) {
+            fwrite(&score, sizeof(int), 1, hs_file);
+        }
+        fclose(hs_file);
+        free(hs_file_name);
+    }
+    endwin();
+    return 0;
 }
 
 int add_random(Grid *grid)
@@ -151,8 +186,19 @@ void draw_board(Grid *grid)
     }
 
     clearscreen();
+    printf(hs_enabled ?
+           "+---------+---------+\r\n"
+           "|  SCORE  |HIGHSCORE|\r\n"
+           "+---------+---------+\r\n"
+           "|    %4d |    %4d |\r\n"
+           "+---------+---------+\r\n"
+           :
+           "+---------+--------+\r\n"
+           "|  SCORE  |   %4d |\r\n"
+           "+---------+--------+\r\n",
+           score, highscore
+          );
     fwrite(buffer, 1, GRID_BUF_SIZE, stdout);
-    printf("SCORE: %d\r\n", score);
 };
 
 bool make_move(Grid *grid, const int dir)
@@ -319,12 +365,12 @@ void game_over(Grid *grid, bool won)
 {
     draw_board(grid);
     printf(won ? "You win!\r\n" : "GAME OVER\r\n");
-    printf("Final score: %d\r\n", score);
+    printf(score > highscore ? "New highscore: %d\r\n" : "Your score: %d\r\n", score);
     printf("Press q to exit...\r\n");
+
     for(;;) {
         if(getch() == 'q') {
-            endwin();
-            exit(0);
+            return;
         }
     }
 }
