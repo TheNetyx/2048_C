@@ -7,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include <ncurses.h>
+#include <ctype.h>
 
 typedef int Grid;
 
@@ -16,7 +17,7 @@ typedef int Grid;
 #define DIR_LEFT  3
 
 #define GRID_BUF_SIZE (GRID_BUF_CHARS_PER_ROW * GRID_BUF_NUM_ROWS)
-#define GRID_BUF_CHARS_PER_ROW 31
+#define GRID_BUF_CHARS_PER_ROW 39
 #define GRID_BUF_NUM_ROWS 17
 
 #define clearscreen() printf("\033[2J\033[H")
@@ -24,10 +25,10 @@ typedef int Grid;
 #define GRID(y, x)  grid[((y) * 4 + (x))]
 
 const int LOCATION_MODIFIER[] = {
-    64,  71,  78,  85,
-    188, 195, 202, 209,
-    312, 319, 326, 333,
-    436, 443, 450, 457
+    80,  89,  98,  107,
+    236, 245, 254, 263,
+    392, 401, 410, 419,
+    548, 557, 566, 575
 };
 
 int  add_random(Grid *grid);

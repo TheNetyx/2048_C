@@ -10,6 +10,8 @@ int main(void)
     int key_pressed;
     FILE *hs_file;      // hs = highscore
     char *hs_file_name, *home_env;
+    bool win_enabled = true;
+    char read_char;
 
     score = 0;
 
@@ -56,13 +58,28 @@ int main(void)
         if(key_pressed >= 65 && key_pressed <= 68) {
             if(!make_move(grid, key_pressed - 65)) {
                 /* check if there is a cell with 2048 (win) */
-                for(int i = 0;i < 16;i++) {
-                    if(grid[i] == 2048) {
-                        add_random(grid);
-                        game_over(grid, true);
-                        goto cleanup;
+                if (win_enabled) {
+                    for(int i = 0;i < 16;i++) {
+                        if(grid[i] == 2048) {
+                            add_random(grid);
+                            draw_board(grid);
+
+                            do {
+                                printf("You win! Continue playing? [y/n] ");
+                                read_char = tolower(getchar());
+                            } while(read_char != 'y' && read_char != 'n');
+
+                            if(read_char == 'y') {
+                                win_enabled = false;
+                                break;
+                            } else {
+                                game_over(grid, true);
+                                goto cleanup;
+                            }
+                        }
                     }
                 }
+
                 if(add_random(grid)) {
                     game_over(grid, false);
                     goto cleanup;
@@ -146,44 +163,44 @@ bool has_valid_moves(Grid *grid)
 
 void draw_board(Grid *grid)
 {
-    char buffer[] = "+------+------+------+------+\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "+------+------+------+------+\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "+------+------+------+------+\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "+------+------+------+------+\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "|      |      |      |      |\r\n"
-                    "+------+------+------+------+\r\n";
+    char buffer[] = "+--------+--------+--------+--------+\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "+--------+--------+--------+--------+\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "+--------+--------+--------+--------+\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "+--------+--------+--------+--------+\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "|        |        |        |        |\r\n"
+                    "+--------+--------+--------+--------+\r\n";
 
     for(int i = 0;i < 16;i++) {
         if(grid[i]) {
-            sprintf(buffer + LOCATION_MODIFIER[i], "%4d", grid[i]);
+            sprintf(buffer + LOCATION_MODIFIER[i], "%6d", grid[i]);
             /* replace null byte from sprintf with space so the grid can  */
             /* be printed properly                                        */
-            *(buffer + LOCATION_MODIFIER[i] + 4) = ' ';
+            *(buffer + LOCATION_MODIFIER[i] + 6) = ' ';
         }
     }
 
     clearscreen();
     printf(hs_enabled ?
-           "+---------+---------+\r\n"
-           "|  SCORE  |HIGHSCORE|\r\n"
-           "+---------+---------+\r\n"
-           "|  %6d |  %6d |\r\n"
-           "+---------+---------+\r\n"
+           "+-----------+-----------+\r\n"
+           "|   SCORE   | HIGHSCORE |\r\n"
+           "+-----------+-----------+\r\n"
+           "|   %7d |   %7d |\r\n"
+           "+-----------+-----------+\r\n"
            :
-           "+---------+--------+\r\n"
-           "|  SCORE  | %6d |\r\n"
-           "+---------+--------+\r\n",
+           "+---------+---------+\r\n"
+           "|  SCORE  | %7d |\r\n"
+           "+---------+---------+\r\n",
            score, highscore
           );
     fwrite(buffer, 1, GRID_BUF_SIZE, stdout);
