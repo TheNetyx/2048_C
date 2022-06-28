@@ -376,7 +376,6 @@ bool make_move(Grid *grid, const int dir)
             }
             break;
         default:
-            system("touch baddir");
             abort();
     }
     memcpy(grid, newgrid, sizeof(newgrid));
