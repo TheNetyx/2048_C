@@ -390,7 +390,7 @@ void game_over(Grid *grid, bool won)
     draw_board(grid);
     printf(won ? "You win!\r\n" : "GAME OVER\r\n");
     printf(score > highscore ? "New highscore: %d\r\n" : "Your score: %d\r\n", score);
-    printf("Press q to exit...\r\n");
+    printf("Press q to exit...");
 
     for(;;) {
         if(getch() == 'q') {
